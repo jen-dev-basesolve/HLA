@@ -26,7 +26,7 @@ do
     shift
 done
 
-echo "typer.sh parameters: DELETE=$DELETE FULL=$FULL"
+echo "typer.sh parameters: DELETE=$DELETE FULL=$FULL CORES=$CORES"
 
 mkdir -p $OUT
 TEMP=temp-$RANDOM-$RANDOM-$RANDOM
