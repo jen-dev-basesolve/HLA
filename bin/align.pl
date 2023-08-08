@@ -8,10 +8,13 @@ my $bin=$FindBin::Bin;
 my $root = $bin;
 $root =~ s|/[^/]+?$||;
 
-die "usage: $0 fastq output\n" unless $#ARGV >= 1;
+die "usage: $0 fastq output cores\n" unless $#ARGV >= 1;
 my $doDNA = 1 if $#ARGV > 1;
 my $fastq_file = shift;
 my $out_file = shift;
+my $cores = shift;
+
+print "No of cores in align.pl ->>>>>>>> $cores";
 
 print STDERR "processing FASTQ file\n";
 my %qseq;
@@ -58,16 +61,15 @@ while(<IN>)
 	$is_gene{$id} = "$g\t$exon";
 }
 print STDERR "\tfound ", scalar(keys %tseq), " HLA exons\n";
-
 print STDERR "processing FASTQ file\n";
-open(IN, "diamond blastx -t . -C 20000 --index-mode 1 --seg no --min-score 10 --top 20 -c 1 -d $root/data/hla -q $fastq_file -f tab --quiet -o /dev/stdout |") or die $!;
+open(IN, "diamond blastx --tmpdir /opt/temp_dir --min-score 10 --top 20 --index-chunks 1 --db $root/data/hla --query $fastq_file --outfmt 6 --out /dev/stdout --verbose --log|") or die $!;
 my %mLEN;
 my %mlen;
 my %match;
 my %matched;
 my %nonspec;
 while(<IN>)
-{
+{	
 	my ($qu, $target, $identity, $len, $mis, $gap, $qs, $qe, $ts, $te, $e, $score) = split(/\t/, $_);
 	next unless $identity == 100;
 	my $q = "$qu==$qs-$qe";
@@ -100,6 +102,7 @@ while(<IN>)
 }
 
 open OUT, ">$out_file" or die $!;
+print STDERR "this is the out_file >>>> $out_file\n";
 open OUT2, ">$out_file.dna" or die $!;
 print STDERR "translating matches to MSA\n";
 my %done;

@@ -10,6 +10,7 @@ set -eu -o pipefail
 BIN="`dirname \"$0\"`"
 S3=$1
 ID=$2
+CORES=$3
 OUT=hla-$ID
 DELETE=false
 FULL=false
@@ -29,6 +30,7 @@ echo "typer.sh parameters: DELETE=$DELETE FULL=$FULL"
 
 mkdir -p $OUT
 TEMP=temp-$RANDOM-$RANDOM-$RANDOM
+echo "this is out dir >>>> " ${OUT}
 
 echo "Extracting reads from S3"
 samtools view -u $S3 chr6:29886751-33090696 | samtools view -L $BIN/../data/hla.bed - > ${TEMP}.sam
@@ -36,13 +38,15 @@ $BIN/preprocess.pl ${TEMP}.sam | gzip > $OUT/$ID.fq.gz
 rm ${TEMP}.sam
 echo "Aligning reads to IMGT database"
 if [ "$FULL" = true ]; then
-    $BIN/align.pl $OUT/${ID}.fq.gz $OUT/${ID}.tsv full
+    $BIN/align.pl $OUT/${ID}.fq.gz $OUT/${ID}.tsv ${CORES} full
 else
-    $BIN/align.pl $OUT/${ID}.fq.gz $OUT/${ID}.tsv
+    $BIN/align.pl $OUT/${ID}.fq.gz $OUT/${ID}.tsv ${CORES}
 fi
 
-echo "Typing"
-$BIN/typing.r $OUT/${ID}.tsv $OUT/${ID}.hla
+echo "number of cores in typer.sh ->>>>" ${CORES}
+echo "Typing command >>"
+echo $BIN/typing.r $OUT/${ID}.tsv $OUT/${ID}.hla ${CORES}
+$BIN/typing.r $OUT/${ID}.tsv $OUT/${ID}.hla ${CORES}
 
 echo "Reporting"
 $BIN/report.py -in $OUT/${ID}.hla -out $OUT/${ID}.json -subject $ID -sample $ID
